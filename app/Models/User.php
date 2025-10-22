@@ -61,4 +61,14 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function families()
+    {
+        return $this->hasMany(Family::class)->withPivot(['role', 'is_admin']);
+    }
+
+    public function family()
+    {
+        return $this->families()->first();
+    }
 }
