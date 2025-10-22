@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Reward extends Model
 {
@@ -25,5 +26,10 @@ class Reward extends Model
     public function family(): BelongsTo
     {
         return $this->belongsTo(Family::class);
+    }
+
+    public function redemptions(): BelongsToMany
+    {
+        return $this->belongsToMany(Redemption::class)->withPivot(['quantity', 'unit_price', 'total_price']);
     }
 }
