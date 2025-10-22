@@ -19,7 +19,7 @@ class OccurrenceFactory extends Factory
         return [
             'due_date' => fake()->dateTimeBetween('now', '+1 year'),
             'points_awarded' => fake()->numberBetween(1, 100),
-            'status' => 'pending',
+            'status' => fake()->randomElement(['pending', 'submitted', 'approved', 'rejected', 'missed']),
         ];
     }
 }
