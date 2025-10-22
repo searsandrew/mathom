@@ -15,7 +15,7 @@ return new class extends Migration
             $table->ulid('id')->primary();
             $table->foreignUlid('chore_id')->constrained()->onDelete('cascade');
             $table->foreignUlid('family_id')->constrained()->onDelete('cascade');
-            $table->foreignUlid('user_id')->nullable()->constrained()->onDelete('null');
+            $table->foreignUlid('user_id')->nullable()->constrained()->nullOnDelete();
             $table->enum('frequency', ['daily', 'weekly', 'monthly', 'custom'])->default('weekly');
             $table->json('custom_frequency')->nullable();
             $table->integer('points')->default(0);
