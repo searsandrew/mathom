@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class Reward extends Model
+{
+    /** @use HasFactory<\Database\Factories\RewardFactory> */
+    use HasFactory;
+
+    protected $fillable = [
+        'name',
+        'description',
+        'family_id',
+        'image_path',
+        'image_name',
+        'is_active',
+        'inventory',
+        'price_points',
+    ];
+
+    public function family(): BelongsTo
+    {
+        return $this->belongsTo(Family::class);
+    }
+}
