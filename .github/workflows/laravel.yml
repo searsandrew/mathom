@@ -9,18 +9,39 @@ on:
 jobs:
   laravel-tests:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.3']
 
     steps:
       - uses: actions/checkout@v4
 
+      # --- Tooling versions summary (at top of run) ---
+      - name: Write step summary header
+        if: always()
+        run: |
+          {
+            echo "## CI Summary"
+            echo "- Branch: $GITHUB_REF_NAME"
+            echo "- Matrix PHP: ${{ matrix.php }}"
+          } >> $GITHUB_STEP_SUMMARY
+
+      # --- PHP setup ---
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: ${{ matrix.php }}
           extensions: pdo_sqlite, sqlite3, mbstring, bcmath, intl, pcntl, dom, fileinfo
           tools: composer:v2
           coverage: none
 
+      - name: PHP/Composer versions
+        run: |
+          php -v | head -n1
+          composer --version
+
+      # --- Composer cache ---
       - name: Cache Composer
         uses: actions/cache@v4
         with:
@@ -28,22 +49,25 @@ jobs:
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: ${{ runner.os }}-composer-
 
-      - name: Copy .env
-        run: php -r "file_exists('.env') || copy('.env.example', '.env');"
-
-      - name: Install PHP deps
-        run: composer install --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
-
-      - uses: actions/setup-node@v4
+      # --- Node setup + cache ---
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install frontend deps
-        run: npm ci
+      - name: Node version
+        run: node -v
 
-      - name: Build assets
-        run: npm run build
+      # --- App env + PHP deps ---
+      - name: Copy .env
+        run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+
+      - name: Install PHP dependencies
+        run: |
+          echo "::group::composer install"
+          composer install --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+          echo "::endgroup::"
 
       - name: Generate key
         run: php artisan key:generate
@@ -51,6 +75,14 @@ jobs:
       - name: Directory Permissions
         run: chmod -R 777 storage bootstrap/cache
 
+      # --- Frontend deps + Vite build (creates public/build/manifest.json) ---
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build assets
+        run: npm run build
+
+      # --- Test DB + migrate ---
       - name: Create & Migrate SQLite DB
         env:
           APP_ENV: testing
@@ -64,6 +96,7 @@ jobs:
           php artisan config:clear
           php artisan migrate --force
 
+      # --- Tests: quiet first, verbose rerun on failure ---
       - name: Run tests (quiet)
         id: run_tests
         env:
@@ -78,7 +111,7 @@ jobs:
           echo "exit_code=$?" >> $GITHUB_OUTPUT
           exit 0
 
-      - name: Rerun failed tests verbose
+      - name: Rerun failed tests (verbose, stop early)
         if: steps.run_tests.outputs.exit_code != '0'
         env:
           APP_ENV: testing
@@ -86,9 +119,36 @@ jobs:
           LOG_CHANNEL: stderr
           DB_CONNECTION: sqlite
           DB_DATABASE: database/database.sqlite
-        run: php artisan test -v --stop-on-failure --order-by=defects
+        run: |
+          echo "::group::Re-running failed tests"
+          php artisan test -v --stop-on-failure --order-by=defects
+          echo "::endgroup::"
 
+      # --- Tail logs + upload artifacts on failure ---
       - name: Tail laravel.log on failure
         if: failure()
         run: |
+          echo "---- tail storage/logs/laravel.log ----"
           test -f storage/logs/laravel.log && tail -n 400 storage/logs/laravel.log || echo "No laravel.log"
+
+      - name: Upload logs and coverage
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-and-coverage-php-${{ matrix.php }}
+          path: |
+            storage/logs/*
+            coverage/**/*
+          if-no-files-found: ignore
+
+      # --- Add versions to step summary at end ---
+      - name: Append versions to summary
+        if: always()
+        run: |
+          {
+            echo ""
+            echo "### Tool Versions"
+            php -v | head -n1
+            composer --version
+            node -v
+          } >> $GITHUB_STEP_SUMMARY
