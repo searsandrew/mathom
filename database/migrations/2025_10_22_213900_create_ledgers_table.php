@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('ledgers', function (Blueprint $table) {
             $table->ulid('id')->primary();
+            $table->foreignUlid('family_id')->constrained()->onDelete('cascade');
             $table->foreignUlid('wallet_id')->constrained()->onDelete('cascade');
             $table->timestamp('occurred_at')->index();
             $table->enum('type', ['earn', 'bonus', 'penalty', 'manual_adjust', 'redeem_hold', 'redeem_release', 'redeem_capture']);

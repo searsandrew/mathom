@@ -22,4 +22,9 @@ class Occurrence extends Model
     {
         return $this->belongsTo(Assignment::class);
     }
+
+    public function family(): BelongsTo
+    {
+        return $this->belongsTo(Family::class);
+    }
 }

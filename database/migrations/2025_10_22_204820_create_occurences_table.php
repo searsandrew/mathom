@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('occurrences', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->foreignUlid('assignment_id')->constrained()->onDelete('cascade');
+            $table->foreignUlid('family_id')->constrained()->onDelete('cascade');
             $table->dateTime('due_date');
             $table->enum('status', ['pending', 'submitted', 'approved', 'rejected', 'missed'])->default('pending');
             $table->integer('points_awarded')->default(0);

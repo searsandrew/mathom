@@ -21,6 +21,11 @@ class Ledger extends Model
         'metadata' => 'array'
     ];
 
+    public function family(): BelongsTo
+    {
+        return $this->belongsTo(Family::class);
+    }
+
     public function wallet(): BelongsTo
     {
         return $this->belongsTo(Wallet::class);

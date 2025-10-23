@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('redemptions', function (Blueprint $table) {
             $table->ulid('id')->primary();
+            $table->foreignUlid('family_id')->constrained()->onDelete('cascade');
             $table->foreignUlid('wallet_id')->constrained()->onDelete('cascade');
             $table->enum('status', ['pending', 'approved', 'fulfilled', 'cancelled'])->default('pending');
             $table->text('notes')->nullable();
