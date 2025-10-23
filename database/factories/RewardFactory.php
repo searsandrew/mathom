@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Models\Family;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Reward>
@@ -17,6 +18,7 @@ class RewardFactory extends Factory
     public function definition(): array
     {
         return [
+            'family_id' => Family::factory(),
             'name' => fake()->word(),
             'description' => fake()->sentence(),
             'image_path' => fake()->imageUrl(),

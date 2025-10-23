@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignUlid('family_id')->constrained()->onDelete('cascade');
             $table->string('name');
             $table->string('description')->nullable();
-            $table->integer('base_points')->default(0);
+            $table->integer('points')->default(0);
             $table->timestamps();
             $table->softDeletes();
         });

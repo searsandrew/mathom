@@ -3,6 +3,8 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Models\Family;
+use App\Models\Wallet;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Redemption>
@@ -17,6 +19,10 @@ class RedemptionFactory extends Factory
     public function definition(): array
     {
         return [
+            'family_id' => Family::factory(),
+            'wallet_id' => Wallet::factory()->state(function (array $attributes) {
+                return ['family_id' => $attributes['family_id'] ?? Family::factory()];
+            }),
             'status' => fake()->randomElement(['pending', 'approved', 'fulfilled', 'cancelled']),
             'notes' => fake()->sentence(),
             'requested_at' => fake()->dateTimeBetween('-1 year', 'now'),

@@ -10,6 +10,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use Kodeine\Metable\Metable;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class User extends Authenticatable
 {
@@ -62,9 +63,11 @@ class User extends Authenticatable
         ];
     }
 
-    public function families()
+    public function families(): BelongsToMany
     {
-        return $this->hasMany(Family::class)->withPivot(['role', 'is_admin']);
+        return $this->belongsToMany(Family::class)
+            ->withPivot(['role', 'is_admin'])
+            ->withTimestamps();
     }
 
     public function family()
