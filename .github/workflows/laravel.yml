@@ -21,7 +21,7 @@ jobs:
           tools: composer:v2
           coverage: none
 
-      - name: Cache Composer packages
+      - name: Cache Composer
         uses: actions/cache@v4
         with:
           path: ~/.composer/cache/files
@@ -31,8 +31,19 @@ jobs:
       - name: Copy .env
         run: php -r "file_exists('.env') || copy('.env.example', '.env');"
 
-      - name: Install Dependencies
+      - name: Install PHP deps
         run: composer install --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install frontend deps
+        run: npm ci
+
+      - name: Build assets
+        run: npm run build
 
       - name: Generate key
         run: php artisan key:generate
@@ -53,19 +64,31 @@ jobs:
           php artisan config:clear
           php artisan migrate --force
 
-      - name: Run tests
+      - name: Run tests (quiet)
+        id: run_tests
         env:
           APP_ENV: testing
           APP_DEBUG: true
           LOG_CHANNEL: stderr
           DB_CONNECTION: sqlite
           DB_DATABASE: database/database.sqlite
-        run: php artisan test -v
+        run: |
+          set +e
+          php artisan test --testdox
+          echo "exit_code=$?" >> $GITHUB_OUTPUT
+          exit 0
 
-      - name: Print laravel.log on failure
+      - name: Rerun failed tests verbose
+        if: steps.run_tests.outputs.exit_code != '0'
+        env:
+          APP_ENV: testing
+          APP_DEBUG: true
+          LOG_CHANNEL: stderr
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+        run: php artisan test -v --stop-on-failure --order-by=defects
+
+      - name: Tail laravel.log on failure
         if: failure()
         run: |
-          echo "---- storage/logs ----"
-          ls -la storage/logs || true
-          echo "---- laravel.log ----"
-          (test -f storage/logs/laravel.log && cat storage/logs/laravel.log) || echo "No laravel.log"
+          test -f storage/logs/laravel.log && tail -n 400 storage/logs/laravel.log || echo "No laravel.log"
