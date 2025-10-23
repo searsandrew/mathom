@@ -12,33 +12,60 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: pdo_sqlite, mbstring, bcmath, intl, pcntl, sqlite3
-          coverage: none
+          extensions: pdo_sqlite, sqlite3, mbstring, bcmath, intl, pcntl, dom, fileinfo
           tools: composer:v2
+          coverage: none
+
       - name: Cache Composer packages
         uses: actions/cache@v4
         with:
           path: ~/.composer/cache/files
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: ${{ runner.os }}-composer-
+
       - name: Copy .env
         run: php -r "file_exists('.env') || copy('.env.example', '.env');"
-      - name: Install Dependencies
-        run: composer install --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+
       - name: Generate key
         run: php artisan key:generate
+
+      - name: Install Dependencies
+        run: composer install --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+
       - name: Directory Permissions
         run: chmod -R 777 storage bootstrap/cache
-      - name: Create Database (sqlite)
+
+      - name: Create & Migrate SQLite DB
+        env:
+          APP_ENV: testing
+          APP_DEBUG: true
+          LOG_CHANNEL: stderr
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
         run: |
           mkdir -p database
           touch database/database.sqlite
+          php artisan config:clear
+          php artisan migrate --force
+
       - name: Run tests
         env:
+          APP_ENV: testing
+          APP_DEBUG: true
+          LOG_CHANNEL: stderr
           DB_CONNECTION: sqlite
           DB_DATABASE: database/database.sqlite
-        run: php artisan test
+        run: php artisan test -v
+
+      - name: Print laravel.log on failure
+        if: failure()
+        run: |
+          echo "---- storage/logs ----"
+          ls -la storage/logs || true
+          echo "---- laravel.log ----"
+          (test -f storage/logs/laravel.log && cat storage/logs/laravel.log) || echo "No laravel.log"
