@@ -24,6 +24,11 @@ class Reward extends Model
         'price_points',
     ];
 
+    public function categories(): BelongsToMany
+    {
+        return $this->belongsToMany(Category::class);
+    }
+
     public function family(): BelongsTo
     {
         return $this->belongsTo(Family::class);
