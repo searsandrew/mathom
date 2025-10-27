@@ -74,4 +74,10 @@ class User extends Authenticatable
     {
         return $this->families()->first();
     }
+
+    public function badges(): BelongsToMany
+    {
+        return $this->belongsToMany(Badge::class)
+            ->withPivot('awarded_at', 'reason');
+    }
 }

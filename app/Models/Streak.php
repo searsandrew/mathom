@@ -15,6 +15,7 @@ class Streak extends Model
     protected $fillable = [
         'family_id',
         'assignment_id',
+        'user_id',
         'current_streak',
         'best_streak',
         'last_completed_on',

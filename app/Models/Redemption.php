@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Redemption extends Model
 {
@@ -44,4 +46,8 @@ class Redemption extends Model
     {
         return $this->belongsTo(Wallet::class);
     }
+
+    public function ledgerHold(): HasOne { return $this->hasOne(Ledger::class, 'reference_id')->where('reference_type', 'redemption')->where('type', 'redeem_hold'); }
+    public function ledgerReleases(): HasMany { return $this->hasMany(Ledger::class, 'reference_id')->where('reference_type', 'redemption')->where('type', 'redeem_release'); }
+    public function ledgerCaptures(): HasMany { return $this->hasMany(Ledger::class, 'reference_id')->where('reference_type', 'redemption')->where('type', 'redeem_capture');}
 }

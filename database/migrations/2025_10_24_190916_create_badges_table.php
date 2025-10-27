@@ -22,11 +22,12 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('badge_users', function (Blueprint $table) {
+        Schema::create('badge_user', function (Blueprint $table) {
             // Standard pivot table: no id column; composite primary key on badge_id + user_id
             $table->foreignUlid('badge_id')->constrained()->onDelete('cascade');
             $table->foreignUlid('user_id')->constrained()->onDelete('cascade');
             $table->timestamp('awarded_at')->index();
+            $table->text('reason')->nullable();
             $table->primary(['badge_id', 'user_id']);
         });
     }

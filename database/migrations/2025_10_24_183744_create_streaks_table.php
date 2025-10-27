@@ -15,6 +15,7 @@ return new class extends Migration
             $table->ulid('id')->primary();
             $table->foreignUlid('family_id')->constrained()->onDelete('cascade');
             $table->foreignUlid('assignment_id')->constrained()->onDelete('cascade');
+            $table->foreignUlid('user_id')->constrained()->onDelete('cascade');
             $table->unsignedInteger('current_streak')->default(0);
             $table->unsignedInteger('best_streak')->default(0);
             $table->date('last_completed_on')->nullable();
