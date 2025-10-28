@@ -15,7 +15,7 @@ class BadgeEvaluator
         $this->evaluateAll($user);
     }
 
-    public function afterRedeptionFulfilled(User $user): void
+    public function afterRedemptionFulfilled(User $user): void
     {
         $this->evaluateAll($user);
     }
@@ -27,17 +27,24 @@ class BadgeEvaluator
 
     protected function evaluateAll(User $user): void
     {
-        $badges = Badge::query()->where('family_id', $user->family->id)-> where('is_active', true)->get();
+        // In unit tests or edge cases, a non-persisted User should be ignored to avoid unintended DB queries
+        if (!$user->exists) return;
+
+        $familyId = $user->family()?->id ?? $user->wallet?->family_id;
+        if (!$familyId) return;
+
+        $badges = Badge::query()
+            ->where('family_id', $familyId)
+            ->get();
 
         foreach ($badges as $badge) {
             if ($this->alreadyHas($user, $badge)) continue;
             if ($this->meetsCriteria($user, $badge)) {
-                DB::transaction(function () use ($user, $badge) {
-                    if($this->alreadyHas($user, $badge)) return;
+                DB::transaction(function () use ($user, $badge, $familyId) {
+                    if ($this->alreadyHas($user, $badge)) return;
                     $user->badges()->attach($badge->id, [
-                        'family_id'     => $user->family_id,
                         'awarded_at'    => now(),
-                        'reason'        => 'Criteria met'
+                        'reason'        => 'Criteria met',
                     ]);
 
                     event(new BadgeAwarded($badge));
@@ -48,15 +55,18 @@ class BadgeEvaluator
 
     protected function alreadyHas(User $user, Badge $badge): bool
     {
-        return Badge::where('badge_id', $badge->id)->where('user_id', $user->id)->exists();
+        return $user->badges()->whereKey($badge->id)->exists();
     }
 
     protected function meetsCriteria(User $user, Badge $badge): bool
     {
         $criteria = $badge->criteria ?? [];
         if (isset($criteria['lifetime_points']['gte'])) {
+            $walletId = $user->wallet?->id;
+            if (!$walletId) return false;
+
             $sum = Ledger::query()
-                ->where('wallet_id', $user->wallet->id)
+                ->where('wallet_id', $walletId)
                 ->whereIn('type', ['earn', 'bonus', 'manual_adjust', 'allowance_payout'])
                 ->sum('amount');
 

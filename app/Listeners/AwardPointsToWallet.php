@@ -23,9 +23,9 @@ class AwardPointsToWallet implements ShouldQueue
      */
     public function handle(SubmissionApproved $event): void
     {
-        $this->ledger->earnForOccurance(
+        $this->ledger->earnForOccurrence(
             submission: $event->submission,
-            occurence: $event->occurence,
+            occurrence: $event->occurrence,
             user: $event->user,
             points: $event->pointsAwarded,
         );

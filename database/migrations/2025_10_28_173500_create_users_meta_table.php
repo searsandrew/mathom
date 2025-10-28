@@ -11,11 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('users_meta')) {
+            return;
+        }
+
         Schema::create('users_meta', function (Blueprint $table) {
-            $table->bigIncrements('id');
-            $table->ulid('user_id')->index();
-            $table->string('type')->nullable();
+            $table->id();
+            $table->foreignUlid('user_id')->constrained()->onDelete('cascade');
             $table->string('key');
+            $table->string('type')->nullable();
             $table->text('value')->nullable();
             $table->timestamps();
             $table->unique(['user_id', 'key']);

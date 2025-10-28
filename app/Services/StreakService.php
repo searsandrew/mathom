@@ -6,6 +6,7 @@ use App\Models\Occurrence;
 use App\Models\Streak;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 
 class StreakService
 {
@@ -18,8 +19,8 @@ class StreakService
                 'user_id' => $user->id,
             ]);
 
-            $today = $occurrence->due_on;
-            $prev = $streak->last_completed_on;
+            $today = Carbon::parse($occurrence->due_date)->startOfDay();
+            $prev = $streak->last_completed_on ? Carbon::parse($streak->last_completed_on)->startOfDay() : null;
 
             $inSeq = $prev ? $prev->copy()->addDay()->equalTo($today) : true;
 

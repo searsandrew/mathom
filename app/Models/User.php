@@ -8,14 +8,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
-use Kodeine\Metable\Metable;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, HasRoles, HasUlids, Metable, Notifiable;
+    use HasFactory, HasRoles, HasUlids, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -45,6 +45,8 @@ class User extends Authenticatable
     public function initials(): string
     {
         return Str::of($this->name)
+            ->trim()
+            ->replaceMatches('/\s+/', ' ')
             ->explode(' ')
             ->map(fn (string $name) => Str::of($name)->substr(0, 1))
             ->implode('');
@@ -79,5 +81,10 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Badge::class)
             ->withPivot('awarded_at', 'reason');
+    }
+
+    public function wallet(): HasOne
+    {
+        return $this->hasOne(Wallet::class);
     }
 }

@@ -22,10 +22,12 @@ class LedgerService
 
             if ($exists) return;
 
+            $walletId = $user->wallet?->id ?? $occurrence->assignment->user?->wallet?->id;
+
             Ledger::create([
                 'family_id'     => $occurrence->family_id,
-                'wallet_id'     => $user->wallet->id,
-                'occurrence_at' => now(),
+                'wallet_id'     => $walletId,
+                'occurred_at'   => now(),
                 'type'          => 'earn',
                 'amount'        => $points,
                 'reference_type' => 'occurrence',
@@ -33,7 +35,9 @@ class LedgerService
                 'metadata'      => ['submission_id' => $submission->getKey()],
             ]);
 
-            $user->wallet->increment('balance', $points);
+            if ($walletId) {
+                $occurrence->assignment->user?->wallet?->increment('balance', $points);
+            }
 
             $occurrence->update(['points_awarded' => $points, 'status' => 'approved']);
         });
@@ -42,15 +46,15 @@ class LedgerService
     public function placeHoldForRedemption(Redemption $redemption): void
     {
         DB::transaction(function () use ($redemption) {
-            $total = $redemption->items()->sum('total_points');
+            $total = (int) $redemption->rewards()->sum('redemption_reward.total_price');
 
             $exists = $redemption->ledgerHold()->exists();
             if ($exists) return;
 
-            $entry = Ledger::create([
+            Ledger::create([
                 'family_id'     => $redemption->family_id,
                 'wallet_id'     => $redemption->wallet_id,
-                'occurred_at' => now(),
+                'occurred_at'   => now(),
                 'type'          => 'redeem_hold',
                 'amount'        => -$total,
                 'reference_type' => 'redemption',
@@ -58,15 +62,14 @@ class LedgerService
                 'metadata'      => ['status' => $redemption->status],
             ]);
 
-            $redemption->update(['hold_ledger_id' => $entry->getKey()]);
-            $redemption->wallet->decrement('balance', $total);
+            $redemption->wallet?->decrement('balance', $total);
         });
     }
 
     public function releaseHoldForRedemption(Redemption $redemption, ?string $reason = null): void
     {
         DB::transaction(function () use ($redemption, $reason) {
-            $total = $redemption->items()->sum('total_points');
+            $total = (int) $redemption->rewards()->sum('redemption_reward.total_price');
 
             $released = $redemption->ledgerReleases()->exists();
             if ($released) return;
@@ -82,7 +85,7 @@ class LedgerService
                 'metadata'      => ['reason' => $reason],
             ]);
 
-            $redemption->wallet->increment('balance', $total);
+            $redemption->wallet?->increment('balance', $total);
         });
     }
 
