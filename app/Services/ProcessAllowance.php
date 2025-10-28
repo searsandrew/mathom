@@ -6,11 +6,14 @@ use App\Events\AllowanceDue;
 use App\Models\Allowance;
 use App\Models\AllowanceRun;
 use App\Models\Ledger;
-use Illuminate\Container\Attributes\DB;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Facades\DB;
 
 class ProcessAllowance implements ShouldQueue
 {
+    /**
+     * @throws \Throwable
+     */
     public function handle(AllowanceDue $event): void
     {
         $allowance = $event->allowance->load('wallet');
@@ -43,7 +46,7 @@ class ProcessAllowance implements ShouldQueue
                     'metadata'      => [],
                 ]);
                 $allowance->wallet->increment('balance', $points);
-                $run->update(['status' => 'paid', 'ledger_id' => $entry->id])
+                $run->update(['status' => 'paid', 'ledger_id' => $entry->id]);
             }
         });
     }

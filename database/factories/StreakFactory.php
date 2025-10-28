@@ -5,6 +5,7 @@ namespace Database\Factories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use App\Models\Family;
 use App\Models\Assignment;
+use App\Models\User;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Streak>
@@ -30,6 +31,7 @@ class StreakFactory extends Factory
                     'family_id' => $attributes['family_id'] ?? Family::factory(),
                 ];
             }),
+            'user_id' => User::factory(),
             'current_streak' => $current,
             'best_streak' => $best,
             'streak_started_on' => $started,
