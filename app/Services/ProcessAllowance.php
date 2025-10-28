@@ -21,17 +21,19 @@ class ProcessAllowance implements ShouldQueue
         DB::transaction(function () use ($allowance, $event) {
             $run = AllowanceRun::firstOrCreate([
                 'allowance_id'  => $allowance->id,
-                'started_at'  => $event->periodStart->toDateString(),
-                'ended_at'    => $event->periodEnd->toDateString(),
+                'started_at'  => $event->periodStart,
+                'ended_at'    => $event->periodEnd,
             ]);
 
             if ($run->status === 'paid') return;
 
             $points = $this->computePoints($allowance, $event);
 
-            $run->calculated_points = $points;
             $run->status = $points > 0 ? 'calculated' : 'skipped';
-            $run->calc_summary = ['mode' => $allowance->mode];
+            $run->calc_summary = [
+                'mode' => $allowance->mode,
+                'points' => $points,
+            ];
             $run->save();
 
             if ($points > 0) {
